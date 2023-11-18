@@ -7,7 +7,7 @@ We will be seeing all the steps to integrate with SAP CAPM application with Post
         1. Schema file in the DB folder
         2. Service file in the Srv folder.
 
-  <img src="images/Structure.png" width="150">
+[](images/Structure.png)
 
 - **Step 2:** Then we will be creating the entity and service to expose the entity. Here we have used the below entity and srv details.
 
@@ -52,7 +52,7 @@ We will be seeing all the steps to integrate with SAP CAPM application with Post
 
   And after that we will be using the `docker compose up` command into our root folder and we will see that our container created. And now as per our compose file the port 8080 will be used to connect to the local PostgreSQL `locahost:8080`. And the username and password is `postgres` as per the docker compose file.
 
-    <img src="images/PostgreSQLLogin.png" width="200">
+    [](images/PostgreSQLLogin.png)
 
   Once logged in then we need to create the Database called `Books` as per the entity Name.
 

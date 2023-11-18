@@ -1,0 +1,76 @@
+_schema-version: '3.1'
+ID: SAP-CAPM-POSTGRES-BTP
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npx cds build --production
+        - bash ./pg-build.sh
+modules:
+  - name: SAP-CAPM-POSTGRES-BTP-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: npm
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: SAP-CAPM-POSTGRES-BTP-postgres
+      - name: SAP-CAPM-POSTGRES-BTP-auth
+
+  - name: SAP-CAPM-POSTGRES-BTP-postgres-deployer
+    type: nodejs
+    path: gen/pg
+    parameters:
+      buildpack: nodejs_buildpack
+      no-route: true
+      no-start: true
+      disk-quota: 1GB
+      memory: 256MB
+      tasks:
+        - name: deploy-to-postgresql
+          command: npm start
+          disk-quota: 1GB
+          memory: 256MB
+    requires:
+      - name: SAP-CAPM-POSTGRES-BTP-postgres
+
+  - name: SAP-CAPM-POSTGRES-BTP
+    type: approuter.nodejs
+    path: app/
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api # must be used in xs-app.json as well
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: SAP-CAPM-POSTGRES-BTP-auth
+
+resources:
+  - name: SAP-CAPM-POSTGRES-BTP-postgres
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: postgresql-db
+      service-plan: trial
+  - name: SAP-CAPM-POSTGRES-BTP-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: SAP-CAPM-POSTGRES-BTP-${org}-${space}
+        tenant-mode: dedicated
